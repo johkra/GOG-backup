@@ -5,8 +5,10 @@ Back up all games with extra content from GOG.com.
 
 import BeautifulSoup
 import requests
+import time
 
 from collections import namedtuple
+from os import path
 from zipfile import ZipFile
 
 
@@ -17,6 +19,10 @@ class Gog(object):
     """
 
     Download = namedtuple("Download", "name url size")
+    Download_status = namedtuple(
+        "Download_status",
+        "success bytes_downloaded time_for_download"
+    )
 
     class Game(object):
         """
@@ -113,14 +119,45 @@ class Gog(object):
             current_downloads.append(current_download)
         return current_downloads
 
+    @staticmethod
     def __verify_zip(filename):
         """Verify existence and integrity of a zip file."""
         is_ok = False
         try:
             with ZipFile(filename, "r") as zip_file:
                 is_ok = zip_file.testzip() == None
-        except IOError as e:
+        except IOError:
             pass
         return is_ok
+
+    def __download(self, url, target_folder):
+        """
+        Download the file specified by url to the target folder.
+
+        Returns a tuple with the download success as first element parameter,
+        the bytes read as second element and time passed as third element.
+        """
+        rep = self._session.get(url)
+        if rep.status_code != 200:
+            return self.Download_status(False, 0, 0)
+
+        # Extract file name between last '/' and optional '?'.
+        # E.g. http://host/path/file.zip?code -> file.zip
+        filename = url.rpartition("/")[2].partition("?")[0]
+        target_file = path.join(target_folder, filename)
+
+        bytes_read = 0
+        start = time.clock()
+        try:
+            with open(target_file, "wb") as output:
+                for chunk in rep.iter_content():
+                    bytes_read += len(chunk)
+                    output.write(chunk)
+        except IOError:
+            # TODO: Print error information
+            return self.Download_status(False, 0, 0)
+
+        time_passed = time.clock() - start
+        return self.Download_status(True, bytes_read, time_passed)
 
 # vim: set ts=4 sw=4 et:
