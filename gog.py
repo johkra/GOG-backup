@@ -1,14 +1,15 @@
-#!/usr/bin/env python2
 """
 Back up all games with extra content from GOG.com.
 """
+from __future__ import print_function
 
 import BeautifulSoup
 import requests
 import time
+import sys
 
 from collections import namedtuple
-from os import path
+from os import path, mkdir
 from zipfile import ZipFile
 
 
@@ -66,11 +67,11 @@ class Gog(object):
         rep = self._session.post(url, data=payload)
 
         if rep.status_code == 500:
-            print "Error logging in"
+            print("Error logging in")
             return False
 
         if rep.headers.get("location") != "http://www.gog.com/en/login/":
-            print "Invalid user name or password"
+            print("Invalid user name or password")
             return False
 
         return True
@@ -82,6 +83,9 @@ class Gog(object):
         Requires successful authentication with login. After executing this
         method you can access the games using the attribute "games".
         """
+        print("Getting games...", end="")
+        sys.stdout.flush()
+
         myaccount = self._session.get("https://www.gog.com/en/myaccount")
         soup = BeautifulSoup.BeautifulSoup(myaccount.text)
         listcontainer = soup.find("div", id="listContainer")
@@ -98,6 +102,27 @@ class Gog(object):
             if len(categories) > 1:
                 game.extras_downloads = self.__get_downloads(categories[1])
             self.games.append(game)
+        print("ok")
+
+    def download_extras(self):
+        for game in self.games:
+            print("### %s ###" % (game.name))
+            try:
+                mkdir(game.code)
+            except OSError:
+                pass
+            game_folder = path.abspath(game.code)
+            for extra in game.extras_downloads:
+                print("Downloading %s (%.2f MB)..." % (self.__extract_file_name(extra.name), extra.size), end="")
+                sys.stdout.flush()
+
+                download_status = self.__download(extra.url, game_folder)
+                if download_status.success:
+#TODO: Fix speed calculation and display
+                    speed = download_status.bytes_downloaded / 1024 / download_status.time_for_download
+                    print("success (%0.2f KB/s)" % (speed))
+                else:
+                    print("failed")
 
     def __get_downloads(self, category_element):
         """Extract and return all downloads for a category. (game or extras)"""
@@ -130,6 +155,13 @@ class Gog(object):
             pass
         return is_ok
 
+    @staticmethod
+    def __extract_file_name(url):
+        # Extract file name between last '/' and optional '?'.
+        # E.g. http://host/path/file.zip?code -> file.zip
+        return url.rpartition("/")[2].partition("?")[0]
+        
+
     def __download(self, url, target_folder):
         """
         Download the file specified by url to the target folder.
@@ -141,14 +173,13 @@ class Gog(object):
         if rep.status_code != 200:
             return self.Download_status(False, 0, 0)
 
-        # Extract file name between last '/' and optional '?'.
-        # E.g. http://host/path/file.zip?code -> file.zip
-        filename = url.rpartition("/")[2].partition("?")[0]
+        filename = self.__extract_file_name(rep.url)
         target_file = path.join(target_folder, filename)
 
         bytes_read = 0
         start = time.clock()
         try:
+#TODO: Check if file exists?
             with open(target_file, "wb") as output:
                 for chunk in rep.iter_content():
                     bytes_read += len(chunk)
@@ -158,6 +189,14 @@ class Gog(object):
             return self.Download_status(False, 0, 0)
 
         time_passed = time.clock() - start
+        # Download was faster than timer, avoid null division.
+        if time_passed == 0:
+            time_passed = 1        
+
+        if filename.endswith("zip"):
+            is_valid = self.__verify_zip(target_file)
+            if not is_valid:
+                return self.Download_status(False, 0, 0)
         return self.Download_status(True, bytes_read, time_passed)
 
 # vim: set ts=4 sw=4 et:
