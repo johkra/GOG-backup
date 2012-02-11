@@ -113,14 +113,20 @@ class Gog(object):
                 pass
             game_folder = path.abspath(game.code)
             for extra in game.extras_downloads:
-                print("Downloading %s (%.2f MB)..." % (self.__extract_file_name(extra.name), extra.size), end="")
+                number, unit = self.__format_bytes(extra.size)
+                print("Downloading %s (%.1f %s)..." % (
+                    self.__extract_file_name(extra.name),
+                    number,
+                    unit
+                ), end="")
                 sys.stdout.flush()
 
                 download_status = self.__download(extra.url, game_folder)
                 if download_status.success:
-#TODO: Fix speed calculation and display
-                    speed = download_status.bytes_downloaded / 1024 / download_status.time_for_download
-                    print("success (%0.2f KB/s)" % (speed))
+                    print("success (%s)" % (self.__calculate_speed(
+                        download_status.bytes_downloaded,
+                        download_status.time_for_download
+                    )))
                 else:
                     print("failed")
 
@@ -160,7 +166,33 @@ class Gog(object):
         # Extract file name between last '/' and optional '?'.
         # E.g. http://host/path/file.zip?code -> file.zip
         return url.rpartition("/")[2].partition("?")[0]
-        
+
+    @staticmethod
+    def __format_bytes(number):
+        """
+        Format a number of bytes to the correct value for a unit.
+
+        Returns a tuple with the number for a unit and the unit.
+        Example: 1536 Byte would return (1.5, "KB")
+        """
+        if number >= 2 ** 30:
+            return (number / 2 ** 30, "GB")
+        if number >= 2 ** 20:
+            return (number / 2 ** 20, "MB")
+        if number >= 2 ** 10:
+            return (number / 2 ** 10, "KB")
+        return (number, "B")
+
+    @staticmethod
+    def __calculate_speed(bytes_downloaded, time_for_download):
+        """
+        Format the downloaded number of bytes in a time for a unit.
+
+        Returns a string with the number to one decimal place and the unit.
+        Example: 1536 Byte in 1 sec would return "1.5 KB/s"
+        """
+        number, unit = format_bytes(bytes_downloaded)
+        return "%.1f %s/s" % (number / time_for_download, unit)
 
     def __download(self, url, target_folder):
         """
@@ -176,10 +208,15 @@ class Gog(object):
         filename = self.__extract_file_name(rep.url)
         target_file = path.join(target_folder, filename)
 
+        if path.exists(target_file):
+            if filename.endswith("zip"):
+                is_valid = self.__verify_zip(target_file)
+                if is_valid:
+                    return self.Download_status(True, 0, 1)
+
         bytes_read = 0
         start = time.clock()
         try:
-#TODO: Check if file exists?
             with open(target_file, "wb") as output:
                 for chunk in rep.iter_content():
                     bytes_read += len(chunk)
@@ -191,7 +228,7 @@ class Gog(object):
         time_passed = time.clock() - start
         # Download was faster than timer, avoid null division.
         if time_passed == 0:
-            time_passed = 1        
+            time_passed = 1
 
         if filename.endswith("zip"):
             is_valid = self.__verify_zip(target_file)

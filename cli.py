@@ -2,6 +2,7 @@
 from getpass import getpass
 from gog import Gog
 
+
 def main():
     username = raw_input("username: ")
     password = getpass("password: ")
