@@ -15,6 +15,7 @@ def main():
 
     gog.get_games()
 
+    gog.download_games()
     gog.download_extras()
 
 if __name__ == "__main__":

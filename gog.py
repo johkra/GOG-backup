@@ -104,6 +104,35 @@ class Gog(object):
             self.games.append(game)
         print("ok")
 
+    def download_games(self):
+        for game in self.games:
+            print("### %s ###" % (game.name))
+            try:
+                mkdir(game.code)
+            except OSError:
+                pass
+            game_folder = path.abspath(game.code)
+            for game_download in game.game_downloads:
+                number, unit = self.__format_bytes(game_download.size)
+                print("Downloading %s (%.1f %s)..." % (
+                    game_download.name,
+                    number,
+                    unit
+                ), end="")
+                sys.stdout.flush()
+
+                download_status = self.__download(
+                    game_download.url,
+                    game_folder
+                )
+                if download_status.success:
+                    print("success (%s)" % (self.__calculate_speed(
+                        download_status.bytes_downloaded,
+                        download_status.time_for_download
+                    )))
+                else:
+                    print("failed")
+
     def download_extras(self):
         for game in self.games:
             print("### %s ###" % (game.name))
@@ -115,7 +144,7 @@ class Gog(object):
             for extra in game.extras_downloads:
                 number, unit = self.__format_bytes(extra.size)
                 print("Downloading %s (%.1f %s)..." % (
-                    self.__extract_file_name(extra.name),
+                    extra.name,
                     number,
                     unit
                 ), end="")
@@ -139,7 +168,7 @@ class Gog(object):
             name = name_el.text.replace("\t", " ", 1).replace("\t", "")
             size_el = download.find("div", {"class": "sh_o_i_size_1"})
             number, unit = size_el.text.split()
-            multi = 1024 if unit == "GB" else 1
+            multi = 2 ** 30 if unit == "GB" else 2 ** 20
             size = float(number) * multi
             if download.find("a"):
                 url = download.find("a").get("href")
@@ -183,15 +212,14 @@ class Gog(object):
             return (number / 2 ** 10, "KB")
         return (number, "B")
 
-    @staticmethod
-    def __calculate_speed(bytes_downloaded, time_for_download):
+    def __calculate_speed(self, bytes_downloaded, time_for_download):
         """
         Format the downloaded number of bytes in a time for a unit.
 
         Returns a string with the number to one decimal place and the unit.
         Example: 1536 Byte in 1 sec would return "1.5 KB/s"
         """
-        number, unit = format_bytes(bytes_downloaded)
+        number, unit = self.__format_bytes(bytes_downloaded)
         return "%.1f %s/s" % (number / time_for_download, unit)
 
     def __download(self, url, target_folder):
