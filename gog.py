@@ -219,8 +219,8 @@ class Gog(object):
         Returns a string with the number to one decimal place and the unit.
         Example: 1536 Byte in 1 sec would return "1.5 KB/s"
         """
-        number, unit = self.__format_bytes(bytes_downloaded)
-        return "%.1f %s/s" % (number / time_for_download, unit)
+        bytes_per_second = bytes_downloaded / time_for_download
+        return "%.1f %s/s" % self.__format_bytes(bytes_per_second)
 
     def __download(self, url, target_folder):
         """
