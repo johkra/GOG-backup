@@ -6,7 +6,7 @@ GOG.com.
 
 You can download its executable from the `github Download page`_.
 
-.. _github Download page:: https://github.com/johkra/GOG-backup/downloads
+.. _github Download page: https://github.com/johkra/GOG-backup/downloads
 
 How to use
 ----------
