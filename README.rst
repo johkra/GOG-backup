@@ -22,6 +22,13 @@ navigate to the directory where you stored the cli.exe file and type "cli" to
 start the program. Opening a command line prompt is recommended as you will be
 able to view program output even after the program has finished running.
 
+Should you get any error message about "incorrect side-by-side configuration"
+or a missing MSVCR90.dll file, then please install the `Microsoft Visual C++
+2008 Redistributable Package`_.
+
+.. _Microsoft Visual C++ 2008 Redistributable Package:
+    http://www.microsoft.com/download/en/details.aspx?id=29
+
 When the program has started, enter your GOG.com login data and wait for the
 downloads to finish. There's no progress indicator during a download, but you
 will be shown the download speed once a download has finished.
