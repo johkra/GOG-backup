@@ -4,9 +4,9 @@ GOG-Backup
 GOG-Backup is a simple program to backup all your games and extras from
 GOG.com.
 
-You can download its executable from github (github_).
+You can download its executable from the `github Download page`_.
 
-.. _github: https://github.com/johkra/GOG-backup/downloads
+.. _github Download page:: https://github.com/johkra/GOG-backup/downloads
 
 How to use
 ----------
