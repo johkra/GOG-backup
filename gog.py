@@ -106,7 +106,7 @@ class Gog(object):
 
     def download_games(self):
         for game in self.games:
-            print("### %s ###" % (game.name))
+            print("### %s ###" % game.name)
             try:
                 mkdir(game.code)
             except OSError:
@@ -135,7 +135,7 @@ class Gog(object):
 
     def download_extras(self):
         for game in self.games:
-            print("### %s ###" % (game.name))
+            print("### %s ###" % game.name)
             try:
                 mkdir(game.code)
             except OSError:
@@ -184,8 +184,8 @@ class Gog(object):
         """Verify existence and integrity of a zip file."""
         is_ok = False
         try:
-            with ZipFile(filename, "r") as zip_file:
-                is_ok = zip_file.testzip() == None
+            with ZipFile(filename, "rb") as zip_file:
+                is_ok = zip_file.testzip() is None
         except IOError:
             pass
         return is_ok
@@ -205,12 +205,12 @@ class Gog(object):
         Example: 1536 Byte would return (1.5, "KB")
         """
         if number >= 2 ** 30:
-            return (number / 2 ** 30, "GB")
+            return number / 2 ** 30, "GB"
         if number >= 2 ** 20:
-            return (number / 2 ** 20, "MB")
+            return number / 2 ** 20, "MB"
         if number >= 2 ** 10:
-            return (number / 2 ** 10, "KB")
-        return (number, "B")
+            return number / 2 ** 10, "KB"
+        return number, "B"
 
     def __calculate_speed(self, bytes_downloaded, time_for_download):
         """
@@ -255,7 +255,7 @@ class Gog(object):
 
         time_passed = time.clock() - start
         # Download was faster than timer, avoid null division.
-        if time_passed == 0:
+        if not time_passed:
             time_passed = 1
 
         if filename.endswith("zip"):
