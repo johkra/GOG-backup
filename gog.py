@@ -218,7 +218,13 @@ class Gog(object):
 
         Returns a string with the number to one decimal place and the unit.
         Example: 1536 Byte in 1 sec would return "1.5 KB/s"
+
+        If the number of bytes downloaded is zero, returns the string "found"
+        to indicate that the file was already found on disk.
         """
+        if bytes_downloaded == 0:
+            return "found"
+
         bytes_per_second = bytes_downloaded / time_for_download
         return "%.1f %s/s" % self.__format_bytes(bytes_per_second)
 
