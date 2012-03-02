@@ -97,6 +97,8 @@ class Gog(object):
             game_link_element = game_element.find("a")
             game.name = game_link_element.text
             game.code = game_link_element.get("href").split("/")[-1]
+            # King's quest contains an invalid character, delete it.
+            game.code = game.code.replace(u"\u2019","")
             categories = game_top.findAll("div", {"class": "sh_o_item"})
             game.game_downloads = self.__get_downloads(categories[0])
             if len(categories) > 1:
@@ -175,6 +177,8 @@ class Gog(object):
             else:
                 # Slice is to remove window.top.location='' around url
                 url = download.get("onclick")[21:-1]
+            # King's quest contains an invalid character, delete it.
+            url = url.replace(u"\u2019","")
             current_download = self.Download(name, url, size)
             current_downloads.append(current_download)
         return current_downloads
