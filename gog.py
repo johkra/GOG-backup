@@ -184,7 +184,7 @@ class Gog(object):
         """Verify existence and integrity of a zip file."""
         is_ok = False
         try:
-            with ZipFile(filename, "rb") as zip_file:
+            with ZipFile(filename, "r") as zip_file:
                 is_ok = zip_file.testzip() is None
         except IOError:
             pass
