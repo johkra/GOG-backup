@@ -251,7 +251,7 @@ class Gog(object):
                 return self.Download_status(True, 0, 1)
 
         bytes_read = 0
-        start = time.clock()
+        start = time.time()
         try:
             with open(target_file, "wb") as output:
                 for chunk in rep.iter_content():
@@ -261,7 +261,7 @@ class Gog(object):
             # TODO: Print error information
             return self.Download_status(False, 0, 0)
 
-        time_passed = time.clock() - start
+        time_passed = time.time() - start
         # Download was faster than timer, avoid null division.
         if not time_passed:
             time_passed = 1
