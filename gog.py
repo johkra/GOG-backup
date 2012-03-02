@@ -247,6 +247,8 @@ class Gog(object):
                 is_valid = self.__verify_zip(target_file)
                 if is_valid:
                     return self.Download_status(True, 0, 1)
+            else:
+                return self.Download_status(True, 0, 1)
 
         bytes_read = 0
         start = time.clock()
